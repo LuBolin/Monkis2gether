@@ -17,8 +17,11 @@ class keyInput:
 
 func _ready():
 	OS.set_window_size(Vector2(1600, 960))
-	#makeRays()
-	feetRays()
+	var ss=OS.get_screen_size(0)
+	var window_size = OS.get_window_size()
+	OS.set_window_position(ss*0.5 - window_size*0.5)
+	makeRays()
+	#feetRays()
 	pass
 
 func _process(delta):
@@ -28,6 +31,10 @@ func _process(delta):
 func _physics_process(delta):
 	#MovementLoop(delta)
 	pass
+
+func _input(event):
+	if(Input.is_key_pressed(KEY_R)):
+		get_tree().reload_current_scene()
 
 func get_input():
 	var dirn: Vector2 = Vector2.ZERO
@@ -42,6 +49,8 @@ func get_input():
 		input.jump=false
 	if Input.is_action_pressed("power"):
 		input.power=true
+	else:
+		input.power=false
 	pass
 
 func MovementLoop(delta):
@@ -49,7 +58,10 @@ func MovementLoop(delta):
 	if(input.jump and grounded):
 		set_axis_velocity(Vector2(0,-150))
 		input.jump=false
-		
+	elif(input.power):
+		#pass
+		set_axis_velocity(Vector2(0,100))
+	
 	if(input.dirn==Vector2.ZERO):
 		if(linear_velocity.x == 0):
 			acceTimer=0
@@ -76,7 +88,7 @@ func MovementLoop(delta):
 		var speed=movementCurve.interpolate(acceTimer)*maxSpeed
 		var toSet=speed*input.dirn+Vector2(0,linear_velocity.y)
 		set_linear_velocity(toSet)
-		
+	
 	pass
 
 # https://docs.godotengine.org/en/stable/classes/class_rigidbody2d.html?#class-rigidbody2d-method-integrate-forces
@@ -85,6 +97,7 @@ func MovementLoop(delta):
 func _integrate_forces(s):
 	var delta = get_physics_process_delta_time() 
 	MovementLoop(delta)
+	
 	info.text=str(s.get_contact_count())
 	for x in range(s.get_contact_count()):
 		var ci = s.get_contact_local_normal(x)
@@ -97,7 +110,7 @@ func _integrate_forces(s):
 	
 func makeRays():
 	var length=32
-	var diff=length/4
+	var diff=length/8.0
 	var rotation=0
 	var dirns=[Vector2.LEFT,Vector2.UP,Vector2.RIGHT,Vector2.DOWN]
 	for dirn in dirns:
@@ -116,9 +129,9 @@ func makeRays():
 	
 func feetRays():
 	var length=32
-	var diff=length/8
-	var offset=-length
-	while(offset<=length):
+	var diff=length/4
+	var offset=-length+diff
+	while(offset<length):
 		var cs=CollisionShape2D.new()
 		var ray=RayShape2D.new()
 		add_child((cs))
@@ -126,3 +139,13 @@ func feetRays():
 		cs.shape=ray
 		cs.position=Vector2.LEFT*offset
 		offset+=diff
+	return
+	var left=CollisionShape2D.new()
+	left.name="LEFT"
+	var ball=CircleShape2D.new()
+	ball.radius=diff/2.0
+	add_child(left)
+	left.shape=ball
+	var center=offset-(diff/2.0)
+	left.position=Vector2(-center,center)
+	print(left.position)
